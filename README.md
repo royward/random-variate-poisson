@@ -67,7 +67,7 @@ This has a number of issues:
 
 * will have to execute the loop an average of lambda times
 
-The first step to speeding this up is to covert to unsigned integers and use a colunt leading zeros (clz) function to keep renormalizing:
+The first step to speeding this up is to covert to unsigned integers and use a count leading zeros (clz) function to keep renormalizing:
 
 	poisson_random_variable(lambda)
 		let num_digits=lambda/log(2.0)
