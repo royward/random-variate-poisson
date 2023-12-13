@@ -1,3 +1,32 @@
+// BSD 3-Clause License
+// 
+// Copyright (c) 2023, Roy Ward
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// 
+// 1. Redistributions of source code must retain the above copyright notice, this
+//    list of conditions and the following disclaimer.
+// 
+// 2. Redistributions in binary form must reproduce the above copyright notice,
+//    this list of conditions and the following disclaimer in the documentation
+//    and/or other materials provided with the distribution.
+// 
+// 3. Neither the name of the copyright holder nor the names of its
+//    contributors may be used to endorse or promote products derived from
+//    this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #include "RandomVariatePoisson.h"
 #if __x86_64 || _M_X64
 #include <emmintrin.h>
@@ -13,39 +42,39 @@
 #define clz64 (uint32_t)__lzcnt64
 #define clz32 (uint32_t)__lzcnt
 #define __builtin_popcount __popcnt
-inline uint64_t multu64hi(uint64_t x, uint64_t y) {
+static inline uint64_t multu64hi(uint64_t x, uint64_t y) {
 	unsigned __int64 ret;
 	_umul128(x, y, &ret);
 	return ret;
 }
-inline void multu64hilo(uint64_t x, uint64_t y, uint64_t& rhi, uint64_t& rlo) {
-	rlo=_umul128(x, y, &rhi);
+static inline void multu64hilo(uint64_t x, uint64_t y, uint64_t* rhi, uint64_t* rlo) {
+	*rlo=_umul128(x, y, rhi);
 }
 #elif defined(__GNUC__) || defined(__clang__) // gcc/clang
 #define clz64 __builtin_clzll
 #define clz32 __builtin_clz
-inline uint64_t multu64hi(uint64_t x,uint64_t y) {
+static inline uint64_t multu64hi(uint64_t x,uint64_t y) {
 	return (uint64_t)((((unsigned __int128)x)*y)>>64);
 }
-inline void multu64hilo(uint64_t x,uint64_t y,uint64_t& rhi,uint64_t& rlo) {
+static inline void multu64hilo(uint64_t x,uint64_t y,uint64_t* rhi,uint64_t* rlo) {
 	unsigned __int128 ret=((unsigned __int128)x)*y;
-	rhi=ret>>64;
-	rlo=ret;
+	*rhi=ret>>64;
+	*rlo=ret;
 }
 #else
 #error Compiler is not gcc, clang or Visual Studio. Need to define clz and 128 bit arithmetic for your compiler
 #endif
 
-inline uint32_t max(uint32_t x, uint32_t y) {
+static inline uint32_t max(uint32_t x, uint32_t y) {
 	return (x<y)?y:x;
 }
 
-inline uint64_t fast_rand64(uint64_t& seed) {
-	seed += 0x60bee2bee120fc15ULL;
+static inline uint64_t fast_rand64(uint64_t* seed) {
+	*seed += 0x60bee2bee120fc15ULL;
 	uint64_t hi,lo;
-	multu64hilo(seed,0xa3b195354a39b70dULL,hi,lo);
+	multu64hilo(*seed,0xa3b195354a39b70dULL,&hi,&lo);
 	uint64_t m1 = hi^lo;
-	multu64hilo(m1,0x1b03738712fad5c9ULL,hi,lo);
+	multu64hilo(m1,0x1b03738712fad5c9ULL,&hi,&lo);
 	uint64_t m2 = hi^lo;
 	return m2;
 }
@@ -65,11 +94,11 @@ const uint64_t P_LN2_INV_2_POW_63=13306513097844300000ULL;
 //     return u * x + 1.0000037044659369797l;
 // }
 
-inline uint32_t multu32hi(uint32_t x,uint32_t y) {
+static inline uint32_t multu32hi(uint32_t x,uint32_t y) {
 	return (((uint64_t)x)*y)>>32;
 }
 
-inline uint32_t p_exp2_32_internal(uint32_t x) {
+static inline uint32_t p_exp2_32_internal(uint32_t x) {
 	uint32_t u=58831021U;
 	u=multu32hi(u,x)+222008398U;
 	u=multu32hi(u,x)+1037829222U;
@@ -94,9 +123,9 @@ typedef __m128i uint8x16_t;
 typedef variant uint8x16_t;
 #endif
 
-inline uint64_t horizonal_mult16_8_corr(uint8x16_t x) {
+static inline uint64_t horizonal_mult16_8_corr(uint8x16_t x) {
 #if __x86_64 || _M_X64
-	variant u;
+	union variant u;
 	u.v=x;
 	uint64_t startx0=u.s8[0];
 	uint64_t startx1=u.s8[8];
@@ -121,7 +150,7 @@ inline uint64_t horizonal_mult16_8_corr(uint8x16_t x) {
 }
 
 // lambda is fixed 32.32
-uint32_t poisson_random_variable_fixed_int(uint64_t& seed, int64_t lambda) {
+uint32_t poisson_random_variable_fixed_int(uint64_t* seed, int64_t lambda) {
 	if(lambda<=0) {
 		return 0;
 	}
@@ -265,7 +294,7 @@ uint32_t poisson_random_variable_fixed_int(uint64_t& seed, int64_t lambda) {
 #endif
 		ret+=16;
 	}
-	variant urand;
+	union variant urand;
 	ret-=16;
 	uint64_t start64=horizonal_mult16_8_corr(old_start);
 	int32_t z=clz64(start64);
