@@ -2,19 +2,26 @@
 #if __x86_64 || _M_X64
 #include <emmintrin.h>
 #include <smmintrin.h>
+#include <intrin.h>
 #elif __aarch64__
 #include <arm_neon.h>
 #endif
 
 #ifdef _MSC_VER // windows
-#define clz (uint32_t)__lzcnt64
-inline uint64_t multu64hi(uint64_t x,uint64_t y) {
+#define clz64 (uint32_t)__lzcnt64
+#define clz32 (uint32_t)__lzcnt
+#define __builtin_popcount __popcnt
+inline uint64_t multu64hi(uint64_t x, uint64_t y) {
 	unsigned __int64 ret;
-	_umul128(x,y,&ret);
+	_umul128(x, y, &ret);
 	return ret;
 }
+inline void multu64hilo(uint64_t x, uint64_t y, uint64_t& rhi, uint64_t& rlo) {
+	rlo=_umul128(x, y, &rhi);
+}
 #elif defined(__GNUC__) || defined(__clang__) // gcc/clang
-#define clz __builtin_clzll
+#define clz64 __builtin_clzll
+#define clz32 __builtin_clz
 inline uint64_t multu64hi(uint64_t x,uint64_t y) {
 	return (uint64_t)((((unsigned __int128)x)*y)>>64);
 }
@@ -61,7 +68,7 @@ inline uint32_t multu32hi(uint32_t x,uint32_t y) {
 }
 
 inline uint32_t p_exp2_32_internal(uint32_t x) {
-	uint64_t u=58831021U;
+	uint32_t u=58831021U;
 	u=multu32hi(u,x)+222008398U;
 	u=multu32hi(u,x)+1037829222U;
 	u=multu32hi(u,x)+(2976266834U+0x7C4F);
@@ -120,7 +127,7 @@ uint32_t poisson_random_variable_fixed_int(uint64_t& seed, int64_t lambda) {
 	uint64_t num_digits=multu64hi(lambda,P_LN2_INV_2_POW_63)<<1;
 	int32_t int_digits=num_digits>>32;
 	num_digits&=0xFFFFFFFFULL;
-	uint32_t r15=p_exp2_32_internal(num_digits)>>23; // e^(ln(2)*x) = (e^ln(2))^x = 2^x
+	uint32_t r15=p_exp2_32_internal((uint32_t)num_digits)>>23; // e^(ln(2)*x) = (e^ln(2))^x = 2^x
 	int32_t ret=-1;
 	if (int_digits<18) {
 		uint8_t start=r15;
@@ -132,7 +139,7 @@ uint32_t poisson_random_variable_fixed_int(uint64_t& seed, int64_t lambda) {
 				i=0;
 			}
 			start=max((((uint32_t)start)*(((uint32_t)r)&0xFF)+0xA7)>>8,1U);
-			uint32_t z=__builtin_clz(start)-24;
+			uint32_t z=clz32(start)-24;
 			int_digits-=z;
 			start<<=z;
 			ret++;
@@ -189,7 +196,7 @@ uint32_t poisson_random_variable_fixed_int(uint64_t& seed, int64_t lambda) {
 	for(uint32_t i=0;i<16;i++) {
 		old_start.s8[i]=0xFF;
 		uint8_t x=max(startx.s8[i],(uint8_t)1);
-		int32_t z=__builtin_clz(x)-24;
+		int32_t z=clz32(x)-24;
 		int_digits-=z;
 		x<<=z;
 		startx.s8[i]=x;
@@ -248,7 +255,7 @@ uint32_t poisson_random_variable_fixed_int(uint64_t& seed, int64_t lambda) {
 		for(uint32_t i=0;i<16;i++) {
 			uint32_t x=startx.s8[i];
 			x=max((x*old_rand.s8[i]+0xA7)>>8,1U);
-			int32_t z=__builtin_clz(x)-24;
+			int32_t z=clz32(x)-24;
 			int_digits-=z;
 			x<<=z;
 			startx.s8[i]=x;
@@ -259,7 +266,7 @@ uint32_t poisson_random_variable_fixed_int(uint64_t& seed, int64_t lambda) {
 	variant urand;
 	ret-=16;
 	uint64_t start64=horizonal_mult16_8_corr(old_start);
-	int32_t z=__builtin_clzll(start64);
+	int32_t z=clz64(start64);
 	if(old_start_flag==0 && old_int_digits<z) {
 		ret-=16;
 		int_digits=old_old_int_digits;
@@ -270,7 +277,7 @@ uint32_t poisson_random_variable_fixed_int(uint64_t& seed, int64_t lambda) {
 #endif
 		old_start_flag=old_old_start_flag;
 		start64=horizonal_mult16_8_corr(old_old_start);
-		z=__builtin_clzll(start64);
+		z=clz64(start64);
 	} else {
 		int_digits=old_int_digits;
 #if __x86_64 || _M_X64 || __aarch64__
@@ -282,14 +289,14 @@ uint32_t poisson_random_variable_fixed_int(uint64_t& seed, int64_t lambda) {
 	uint8_t start;
 	if(old_start_flag==0) {
 		int_digits-=z;
-		start=start64>>(56-z);
+		start=(uint8_t)(start64>>(56-z));
 	} else {
 		start=old_start_flag;
 	}
 	uint32_t i=0;
 	while(int_digits>=0 && i<16) {
 		start=max((((uint32_t)start)*urand.s8[i++]+0xA7)>>8,1U);
-		int32_t z=__builtin_clz(start)-24;
+		int32_t z=clz32(start)-24;
 		int_digits-=z;
 		start<<=z;
 		ret++;
