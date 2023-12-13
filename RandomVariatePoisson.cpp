@@ -2,7 +2,9 @@
 #if __x86_64 || _M_X64
 #include <emmintrin.h>
 #include <smmintrin.h>
+#ifdef _MSC_VER
 #include <intrin.h>
+#endif
 #elif __aarch64__
 #include <arm_neon.h>
 #endif
