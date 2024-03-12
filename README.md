@@ -86,4 +86,4 @@ Now note that this can be done on 32 or 64 bit integers, but can be adjusted to 
 
 This can now be vectorized - both SSE and NEON support vectors of 16 8 bit unsigned integers, so 16 versions of the loop can be run at once.
 
-Note that with AVX2 or AVX512, 32 or 64 byte vectors could be used, but we choose to stick to 16 bits to maintain cross platform consistency.
+Note that with AVX2 or AVX512, 32 or 64 byte vectors could be used, but we choose to stick to 16 bytes to maintain cross platform consistency.
