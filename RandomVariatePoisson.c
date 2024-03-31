@@ -47,7 +47,7 @@ static inline uint64_t multu64hi(uint64_t x, uint64_t y) {
 	return ret;
 }
 
-static inline int64_t multu64hi(int64_t x, int64_t y) {
+static inline int64_t mults64hi(int64_t x, int64_t y) {
 	__int64 ret;
 	_mul128(x, y, &ret);
 	return ret;
@@ -57,7 +57,17 @@ static inline void multu64hilo(uint64_t x, uint64_t y, uint64_t* rhi, uint64_t* 
 	*rlo=_umul128(x, y, rhi);
 }
 
-// TODO Windows version of fixed_mult64s and fixed_mult64u coming soon.
+static inline int64_t fixed_mult64s(int64_t x, int64_t y) {
+	int64_t rhi;
+	int64_t rlo = _mul128(x, y, &rhi);
+	return (int64_t)__shiftleft128(rlo, rhi, 32);
+}
+
+static inline int64_t fixed_mult64u(uint64_t x, uint64_t y) {
+	uint64_t rhi;
+	uint64_t rlo = _umul128(x, y, &rhi);
+	return (uint64_t)__shiftleft128(rlo, rhi, 32);
+}
 
 #elif defined(__GNUC__) || defined(__clang__) // gcc/clang
 
@@ -146,7 +156,7 @@ uint64_t fixed_sqrt_32_32(uint64_t x) {
 }
 
 union variant16 {
-#if __x86_64
+#if __x86_64 || _M_X64
 	__m128i v;
 #elif __aarch64__
 	uint16x8_t v;
@@ -155,7 +165,7 @@ union variant16 {
 	uint64_t s64[2];
 };
 
-#if __x86_64
+#if __x86_64 || _M_X64
 typedef __m128i uint16x8_t;
 #elif __aarch64__
 #else
@@ -246,10 +256,10 @@ uint32_t poisson_random_variable_fixed_int(uint64_t* seed, int64_t lambda) {
 		startx=_mm_blendv_epi8(startx,_mm_slli_epi16(startx,2),clz_select2);
 		__m128i clz_select1=_mm_cmpeq_epi16(_mm_and_si128(startx,const_8000),zero);
 		startx=_mm_blendv_epi8(startx,_mm_slli_epi16(startx,1),clz_select1);
-		uint32_t t=__builtin_popcount(_mm_movemask_epi8(clz_select8));
-		t=__builtin_popcount(_mm_movemask_epi8(clz_select4))+t+t;
-		t=__builtin_popcount(_mm_movemask_epi8(clz_select2))+t+t;
-		t=__builtin_popcount(_mm_movemask_epi8(clz_select1))+t+t;
+		uint32_t t=popcount(_mm_movemask_epi8(clz_select8));
+		t=popcount(_mm_movemask_epi8(clz_select4))+t+t;
+		t=popcount(_mm_movemask_epi8(clz_select2))+t+t;
+		t=popcount(_mm_movemask_epi8(clz_select1))+t+t;
 		int_digits-=(t>>1);
 #elif __aarch64__
 		uint16x8_t const_1=vdupq_n_u16(1);
@@ -305,9 +315,9 @@ uint32_t poisson_random_variable_fixed_int(uint64_t* seed, int64_t lambda) {
 			startx=_mm_blendv_epi8(startx,_mm_slli_epi16(startx,2),clz_select2);
 			__m128i clz_select1=_mm_cmpeq_epi16(_mm_and_si128(startx,const_8000),zero);
 			startx=_mm_blendv_epi8(startx,_mm_slli_epi16(startx,1),clz_select1);
-			uint32_t t=__builtin_popcount(_mm_movemask_epi8(clz_select8));
-			t=__builtin_popcount(_mm_movemask_epi8(clz_select4))+t+t;
-			t=(__builtin_popcount(_mm_movemask_epi8(clz_select1))>>1)+__builtin_popcount(_mm_movemask_epi8(clz_select2))+t+t;
+			uint32_t t=popcount(_mm_movemask_epi8(clz_select8));
+			t=popcount(_mm_movemask_epi8(clz_select4))+t+t;
+			t=(popcount(_mm_movemask_epi8(clz_select1))>>1)+popcount(_mm_movemask_epi8(clz_select2))+t+t;
 			int_digits-=t;
 #elif __aarch64__
 			uint64_t a=fast_rand64(seed);
@@ -395,7 +405,7 @@ uint32_t poisson_random_variable_fixed_int(uint64_t* seed, int64_t lambda) {
 			//uint64_t k=std::floor((2.0*a/us+b)*U+u+0.445);
 			uint64_t i2a_div_us=((ia<<21)/ius)<<12; //udiv64fixed(ia<<1,ius);
 			uint64_t ik=(fixed_mult64s(i2a_div_us+ib,iU)+iu+1911260447ULL)>>32;
-			return ik;
+			return (uint32_t)ik;
 		}
 		uint64_t it=fast_rand64(seed)>>32;
 		//double t=it/4294967296.0;
@@ -433,9 +443,9 @@ uint32_t poisson_random_variable_fixed_int(uint64_t* seed, int64_t lambda) {
 			if(lhs>rhs) {
 				continue;
 			}
-			return ik;
+			return (uint32_t)ik;
 		} else if(0<=ik && log_64_fixed(iV)<((int64_t)ik)*log_64_fixed(iu)-(int64_t)iu-log_fact_table_fixed[ik]) {
-			return ik;
+			return (uint32_t)ik;
 		}
 	}
 }
