@@ -46,6 +46,13 @@ static inline uint64_t multu64hi(uint64_t x, uint64_t y) {
 	_umul128(x, y, &ret);
 	return ret;
 }
+
+static inline int64_t multu64hi(int64_t x, int64_t y) {
+	__int64 ret;
+	_mul128(x, y, &ret);
+	return ret;
+}
+
 static inline void multu64hilo(uint64_t x, uint64_t y, uint64_t* rhi, uint64_t* rlo) {
 	*rlo=_umul128(x, y, rhi);
 }
