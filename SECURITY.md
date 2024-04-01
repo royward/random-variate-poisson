@@ -12,4 +12,5 @@ As the changes are all bug fixes or other improvements, there is no known reason
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.0.0   | :white_check_mark: |
+| 2.0.0   | :white_check_mark: |
+| 1.0.0   | :x:                |
