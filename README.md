@@ -4,7 +4,7 @@ A fast way of generating integer random variates from the Poisson distribution w
 
 # Overview
 
-This library contains a single function that allows very fast generation of random Poisson variates with a given lambda ($\lambda$). It:
+This library contains a three variations of functions that allows very fast generation of random Poisson variates with a given lambda ($\lambda$). It:
 
 * is written in C (although builds cleanly with C++, and the tests are written in C++),
 
