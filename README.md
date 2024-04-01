@@ -46,16 +46,11 @@ If a **float** or **double** is desired in the integer version, just multiply by
 
 **poisson_random_variate_integer.c** the implementation of `poisson_random_variate_integer`
 
-**poisson_random_variate_old.c** an old implementation of poisson_random_variate_integer. This is slow, slightly buggy (the means are correct, but the distributions are narrower than they should be. Don't use this unless you need the exact results used by 1.0.0.
+**poisson_random_variate_old.c** an old implementation of poisson_random_variate_integer. This is slower than the more recent version, slightly buggy (the means are correct, but the distributions are narrower than they should be). Don't use this unless you have been already using this and need the exact results used by 1.0.0.
 
 **poisson_random_variate_double.h** file to include to access the C functionality for `poisson_random_variate_double`
 
 **poisson_random_variate_double.c** the implementation of `poisson_random_variate_double`
-
-
-**RandomVariatePoisson.h**: file to include to access the C functionality. Some of the basic functions are provided by inline functions.
-
-**RandomVariatePoisson.c**: Add this into your project. This includes the functionality not provided by pseudo_double.h
 
 **PoissonTest.cpp**: Some simple tests
 
