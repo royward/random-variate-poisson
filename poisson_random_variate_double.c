@@ -69,7 +69,7 @@ constexpr std::array<double,10> log_fact_table = {{
 	std::log(factorial(9))
 }};
 
-uint32_t poisson_random_variable_double(uint64_t* seed, double lambda) {
+uint32_t poisson_random_variate_double(uint64_t* seed, double lambda) {
 	if(lambda<=0) {
 		return 0;
 	}

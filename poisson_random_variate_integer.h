@@ -27,36 +27,12 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "poisson_random_variate_integer.h"
-#include <iostream>
-#include <iomanip>
-#include <cstring>
+#ifndef RANDOM_VARIATE_POISSON_H
+#define RANDOM_VARIATE_POISSON_H
 
-using namespace std;
+#include <stdint.h>
 
-static const uint32_t ITERATIONS=10000;
-static const uint32_t MAX=10000;
+// lambda is fixed 32.32
+uint32_t poisson_random_variate_integer(uint64_t* seed, int64_t lambda);
 
-int main() {
-	uint64_t seed=1234123452347;
-	uint32_t* hist1=new uint32_t[MAX];
-	for(uint64_t lambda=0;lambda<100;lambda+=1) {
-	//for(double lambda=0;lambda<99999;lambda+=1000) {
-		uint64_t tot1=0;
-		memset(hist1,0,MAX*4);
-		for(uint32_t i=0;i<ITERATIONS;i++) {
-			uint32_t p=poisson_random_variate_integer(&seed,lambda*4294967296ULL);
-			if(p>=MAX) {
-				p=MAX-1;
-			}
-			hist1[p]++;
-		}
-		//uint64_t end_time=chrono::system_clock::now().time_since_epoch().count();
-		for(uint32_t i=0;i<MAX;i++) {
- 			tot1+=hist1[i]*i;
-		}
-		cout << lambda << ',' << setprecision(15) << (1.0*tot1)/ITERATIONS-lambda;
-		cout << endl;
-	}
-	return 0;
-}
+#endif // RANDOM_VARIATE_POISSON_H

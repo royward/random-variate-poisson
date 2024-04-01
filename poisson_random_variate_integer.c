@@ -237,7 +237,7 @@ static inline uint64_t horizonal_mult8_16_corr(uint16x8_t x) {
 	return multu64hi(startx0,startx1);
 }
 
-uint32_t poisson_random_variable_fixed_int(uint64_t* seed, int64_t lambda) {
+uint32_t poisson_random_variate_integer(uint64_t* seed, int64_t lambda) {
 	if(lambda<=0) {
 		return 0;
 	}
